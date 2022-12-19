@@ -1,4 +1,8 @@
-const handler = (req, res) => {
+import { MongoClient } from 'mongodb'
+
+import { mongopass } from '../../config';
+
+const handler = async (req, res) => {
   if(req.method === 'POST') {
     const { email, name, message } = req.body;
 
@@ -22,7 +26,31 @@ const handler = (req, res) => {
       message
     };
 
+    let client;
+    try {
+      client = await MongoClient.connect(
+        `mongodb+srv://ajdev:${mongopass}@next-blog-post.n1gfpyv.mongodb.net/my-site?retryWrites=true&w=majority`
+        )
+    } catch (err) {
+      res.status(500).json({ message: 'Could not connect to database.' });
+      return;
+    }
+
+    const db = client.db(); //passing in a db name in ('') connects to it
+
+    try {
+      //creates a collectn if it doesn't exist and inserts a document
+      const result = await db.collection('messages').insertOne(newMesssage); 
+      newMesssage.id = result.insertedId; //getting id from db and adding 
+    } catch (err) {
+      client.close();
+      res.status(500).json({ message: 'Storing message failed' });
+      return;
+    }
+
     console.log(newMesssage);
+
+    client.close();
 
     res
       .status(201)
@@ -33,3 +61,7 @@ const handler = (req, res) => {
 export default handler;
 // this code is only on the server side never included on client side
 // /api/contact
+
+// mongodb+srv://ajdev:<password>@next-blog-post.n1gfpyv.mongodb.net/?retryWrites=true&w=majority
+// `mongodb+srv://ajdev:${mongopass}@next-blog-post.n1gfpyv.mongodb.net/my-site?retryWrites=true&w=majority`
+// here my-site - databasename
